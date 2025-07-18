@@ -45,7 +45,7 @@ num_test_episodes: 100
 
 # snapshot and csv
 save_snapshot: false
-save_csv: true
+save_csv: false
 
 # Wandb
 use_wandb: false

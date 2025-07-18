@@ -135,7 +135,7 @@ class Logger:
 		self.log_local(d, category)
 
 
-	def log_wandb(self, d, category="train", add_step=False):
+	def log_wandb(self, d, category="train", add_step=True):
 		assert category in CAT_TO_COLOR.keys(), f"invalid category: {category}"
 		if self._wandb:
 			step_val = d["frame"] if add_step else None

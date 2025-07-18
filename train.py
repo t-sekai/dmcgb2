@@ -142,7 +142,7 @@ class Workspace:
                     total_reward += time_step.reward
                     step += 1
 
-                self.video_recorder.save(file_name=f'{each_env._mode}_{self.global_frame}',
+                self.video_recorder.save(file_name=each_env._mode, global_frame=self.global_frame,
                                             wandb=self.logger._wandb)
             # final increment
             episode += 1

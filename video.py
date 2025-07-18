@@ -35,16 +35,16 @@ class VideoRecorder:
             self.frames.append(frame)
     
 
-    def save(self, file_name, wandb):
+    def save(self, file_name, global_frame, wandb):
         if self.enabled and self.save_video:
             if self.video_dir:
-                path = str(self.video_dir) +  f"/{file_name}.mp4"
+                path = str(self.video_dir) +  f"/{file_name}_{global_frame}.mp4"
                 # Using moviepy
                 clip = mp.ImageSequenceClip(self.frames, fps=self.fps)
                 clip.write_videofile(path, verbose=False, logger=None)
             if wandb:
                 frames = np.stack(self.frames).transpose(0, 3, 1, 2)
-                wandb.log({file_name: wandb.Video(frames, fps=self.fps, format='mp4')})
+                wandb.log({f'videos/{file_name}': wandb.Video(frames, fps=self.fps, format='mp4')}, step=global_frame)
 
 
 
