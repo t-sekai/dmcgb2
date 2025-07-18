@@ -12,3 +12,8 @@ buffer/
 train.log
 logs/
 datasets/
+
+# Kubernetes batch training
+nautilus/*
+!nautilus/launcher.py
+!nautilus/job_dmcgb2_template.yml

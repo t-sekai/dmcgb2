@@ -1,0 +1,73 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: $job_name$
+  namespace: ucsd-haosulab
+  labels:
+    nautilus.io/rl: "true"
+
+spec:
+  ttlSecondsAfterFinished: 21600
+  template:
+    metadata:
+      labels:
+        nautilus.io/rl: "true"
+    spec:
+      containers:
+        - name: work-container
+          image: tsekai/dmcgb2:latest # docker image
+          
+          # imagePullPolicy: Always
+          command:
+            - bash
+            - -c
+            - |
+              source /usr/local/bin/_activate_current_env.sh
+              cd /root
+              git clone https://github.com/t-sekai/dmcgb2.git
+              cd dmcgb2
+              mkdir datasets
+              cd datasets
+              cp -r /tsc003-fast-vol/DAVIS-2017-trainval-480p.zip .
+              unzip DAVIS-2017-trainval-480p.zip
+              rm DAVIS-2017-trainval-480p.zip
+              cp -r /tsc003-fast-vol/places365standard_easyformat.tar .
+              tar -xvf places365standard_easyformat.tar
+              rm places365standard_easyformat.tar
+              wandb login $wandb_key$
+              pip install dm_control==1.0.21.post1 mujoco==3.2.0
+              # run your command here
+              $command$
+          resources:
+            requests:
+              cpu: "$cpu_request$"
+              memory: "$mem_request$"
+              ephemeral-storage: "$storage_request$"
+              nvidia.com/gpu: "$gpu_request$"
+            limits:
+              cpu: "$cpu_request$"
+              memory: "$mem_request$"
+              ephemeral-storage: "$storage_request$"
+              nvidia.com/gpu: "$gpu_request$"
+          volumeMounts:
+          - name: tsc003-fast-vol
+            mountPath: /tsc003-fast-vol
+      volumes:
+      - name: tsc003-fast-vol
+        persistentVolumeClaim:
+          claimName: tsc003-fast-vol
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: nautilus.io/group
+                  operator: In
+                  values:
+                    - haosu
+                - key: nvidia.com/gpu.product
+                  operator: In
+                  values:
+                    - NVIDIA-GeForce-RTX-2080-Ti
+  backoffLimit: 0
