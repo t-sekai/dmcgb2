@@ -79,6 +79,8 @@ agent_cfg:
   init_temperature: 0.1
   log_std_bounds: [-10,2]
   strong_augs: ${strong_augs} 
+  num_augs: 1
+  mixup_alpha: 1
 
 
 

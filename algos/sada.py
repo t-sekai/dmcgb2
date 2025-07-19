@@ -100,7 +100,7 @@ class AGENT:
     def __init__(self, obs_shape, action_shape, device, lr, feature_dim,
                  hidden_dim, critic_target_tau, num_expl_steps,
                  update_every_steps, init_temperature,
-                 log_std_bounds, strong_augs):
+                 log_std_bounds, strong_augs, num_augs, mixup_alpha):
 
         self.device = device
         self.critic_target_tau = critic_target_tau
@@ -130,9 +130,14 @@ class AGENT:
        # data augmentation
         self.aug = augmentations.random_shift(pad=4)
         self.apply_strong_aug = augmentations.compose_augs(strong_augs)
+        self.num_augs = num_augs
+        self.mixup_alpha = mixup_alpha
 
         self.train()
         self.critic_target.train()
+
+    def batch_apply_strong_aug(self, obs):
+        return torch.stack([self.apply_strong_aug(obs.clone()) for _ in range(self.num_augs)],dim=0)
 
     def train(self, training=True):
         self.training = training
@@ -249,14 +254,21 @@ class AGENT:
 
         # augment
         obs = self.aug(obs.float())
-        aug_obs = self.apply_strong_aug(obs.clone()) 
+        batch_aug_obs = self.batch_apply_strong_aug(obs)
         next_obs = self.aug(next_obs.float())
 
         # encode
-        combined_obs = torch.cat([obs, aug_obs], dim=0)
-        obs, aug_obs = self.encoder(combined_obs).chunk(2, dim=0)
+        combined_obs = torch.cat([obs.unsqueeze(0), batch_aug_obs], dim=0).flatten(0, 1) # ( (k+1)*N, C, H, W )
+        combined_obs = self.encoder(combined_obs).view(self.num_augs+1, obs.size(0), -1) # ( k+1, N, D )
+        obs = combined_obs[0]
+        batch_aug_obs = combined_obs[1:]
         with torch.no_grad():
             next_obs = self.encoder(next_obs)
+        
+        if self.num_augs == 1: # no mixup (base algorithm)
+            aug_obs = batch_aug_obs.squeeze(0)
+        else:
+            aug_obs = augmentations.dirichlet_mixup(batch_aug_obs, self.mixup_alpha)
 
         metrics['batch_reward'] = reward.mean().item()
 

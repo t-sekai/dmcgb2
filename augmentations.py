@@ -5,7 +5,25 @@ import torchvision.datasets as datasets
 import os
 import torch.nn as nn
 
-
+def dirichlet_mixup(
+    z: torch.Tensor,
+    alpha: float = 1.0
+) -> torch.Tensor:
+    """
+    Mix K tensors z[0],…,z[K-1] with Dirichlet(alpha) weights.
+    
+    Args:
+        z: Tensor of shape (K, D1, D2, …).
+        alpha: concentration parameter (>0).
+    
+    Returns:
+        A single Tensor of shape (D1, D2, …) equal to sum_i w_i * z[i].
+    """
+    K = z.size(0)
+    concentration = torch.full((K,), alpha, dtype=z.dtype, device=z.device)
+    weights = torch.distributions.Dirichlet(concentration).sample()
+    weights = weights.view((K,) + (1,) * (z.dim() - 1))
+    return torch.sum(weights * z, dim=0)
 
 
 # utility function to get strong augmentation 

@@ -100,7 +100,7 @@ class AGENT:
     def __init__(self, obs_shape, action_shape, device, lr, feature_dim,
                  hidden_dim, critic_target_tau, num_expl_steps,
                  update_every_steps, init_temperature,
-                 log_std_bounds, strong_augs):
+                 log_std_bounds, strong_augs, num_augs, mixup_alpha):
 
         self.device = device
         self.critic_target_tau = critic_target_tau
@@ -130,6 +130,8 @@ class AGENT:
        # data augmentation
         self.aug = augmentations.random_shift(pad=4)
         self.apply_strong_aug = augmentations.compose_augs(strong_augs)
+        self.num_augs = num_augs
+        self.mixup_alpha = mixup_alpha
 
         self.train()
         self.critic_target.train()
